@@ -281,6 +281,11 @@ func (o *CopyOptions) copyFromPod(src, dest fileSpec) error {
 	}
 
 	reader, outStream := io.Pipe()
+	prefix := getPrefix(src.File)
+	prefix = path.Clean(prefix)
+	// remove extraneous path shortcuts - these could occur if a path contained extra "../"
+	// and attempted to navigate beyond "/" in a remote filesystem
+	prefix = stripPathShortcuts(prefix)
 	options := &exec.ExecOptions{
 		StreamOptions: exec.StreamOptions{
 			IOStreams: genericclioptions.IOStreams{
@@ -294,7 +299,7 @@ func (o *CopyOptions) copyFromPod(src, dest fileSpec) error {
 		},
 
 		// TODO: Improve error messages by first testing if 'tar' is present in the container?
-		Command:  []string{"tar", "cf", "-", src.File},
+		Command:  []string{"tar", "cf", "-", prefix},
 		Executor: &exec.DefaultRemoteExecutor{},
 	}
 
@@ -303,11 +308,7 @@ func (o *CopyOptions) copyFromPod(src, dest fileSpec) error {
 		err := o.execute(options)
 		cmdutil.CheckErr(err)
 	}()
-	prefix := getPrefix(src.File)
-	prefix = path.Clean(prefix)
-	// remove extraneous path shortcuts - these could occur if a path contained extra "../"
-	// and attempted to navigate beyond "/" in a remote filesystem
-	prefix = stripPathShortcuts(prefix)
+	
 	return o.untarAll(reader, dest.File, prefix)
 }
 
