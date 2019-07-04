@@ -294,7 +294,7 @@ func (o *CopyOptions) copyFromPod(src, dest fileSpec) error {
 		},
 
 		// TODO: Improve error messages by first testing if 'tar' is present in the container?
-		Command:  []string{"tar", "cf", "-", src.File},
+		Command:  []string{"tar", "cf", "-", getPrefix(src.File)},
 		Executor: &exec.DefaultRemoteExecutor{},
 	}
 
